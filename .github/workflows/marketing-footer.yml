@@ -1,0 +1,23 @@
+name: Marketing footer
+
+# Every page must carry the shared footer from scripts/marketing/footer.html between
+# <!-- site-footer:start/end --> markers (cs-footer-audit, factory Marketing footer standard).
+# Fails if a page drifts or a new page on disk or in sitemap.xml lacks the markers.
+# Not a deploy gate: Render deploys this static site on push independently of this check.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  marketing-footer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/marketing/sync-partials.mjs --check
+      - run: node --test scripts/marketing/sync-partials.test.mjs
