@@ -7,13 +7,18 @@
 // crawlers and no-JS visitors. Instead, each shared partial lives in scripts/marketing/
 // and is stamped into every page between a pair of markers:
 //
+//   header.html  <!-- site-header:start --> ... <!-- site-header:end -->
 //   footer.html  <!-- site-footer:start --> ... <!-- site-footer:end -->
+//
+// Both partials link with root-relative URLs (/products.html, not products.html) so they
+// also work on public/404.html, which Render serves at whatever missing path was requested
+// (cs-polish). A <base href> cannot fix that: the site's CSP sets base-uri 'none'.
 //
 //   node scripts/marketing/sync-partials.mjs          rewrite every page from the partials
 //   node scripts/marketing/sync-partials.mjs --check  exit 1 if any page is missing a marker
 //                                                     pair or has drifted (runs in CI)
 //
-// To change the footer: edit footer.html, run the sync, commit both.
+// To change the header or footer: edit header.html / footer.html, run the sync, commit both.
 // To add a page: start from scripts/marketing/page-template.html (it already carries the
 // markers), or put the marker pair where the footer goes, then run the sync.
 //
@@ -37,7 +42,10 @@ const check = process.argv.includes('--check');
 const SKIP_DIRS = new Set(['assets', 'scripts', 'node_modules']);
 
 // indent: whitespace before the end marker, matching where the block sits in the page.
-const PARTIALS = [{ name: 'footer', file: 'footer.html', indent: '' }].map((p) => {
+const PARTIALS = [
+  { name: 'header', file: 'header.html', indent: '' },
+  { name: 'footer', file: 'footer.html', indent: '' },
+].map((p) => {
   const start = `<!-- site-${p.name}:start -->`;
   const end = `<!-- site-${p.name}:end -->`;
   const body = readFileSync(join(here, p.file), 'utf8').replace(/\s+$/, '');
@@ -84,8 +92,8 @@ for (const page of [...pages].sort()) {
       continue;
     }
     const outside = next.slice(0, s) + next.slice(e + p.end.length);
-    if (/<footer\b/i.test(outside)) {
-      problems.push(`${page}: has a <footer> outside the ${p.start} markers`);
+    if (new RegExp(`<${p.name}\\b`, 'i').test(outside)) {
+      problems.push(`${page}: has a <${p.name}> outside the ${p.start} markers`);
       continue;
     }
     const replaced = next.slice(0, s) + p.block + next.slice(e + p.end.length);
