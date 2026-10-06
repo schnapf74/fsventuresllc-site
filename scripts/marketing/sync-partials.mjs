@@ -17,6 +17,8 @@
 // To add a page: start from scripts/marketing/page-template.html (it already carries the
 // markers), or put the marker pair where the footer goes, then run the sync.
 //
+// The pages directory is public/ (Render's publish path, cs-publish-scope), so scripts/,
+// .github/ and README.md stay out of the live site.
 // Every .html file under the pages directory (recursively, so blog/<slug>/index.html is
 // covered) and every URL in sitemap.xml is checked. MARKETING_DIR overrides the pages
 // directory (used by the tests).
@@ -28,7 +30,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const marketingDir = process.env.MARKETING_DIR
   ? resolve(process.env.MARKETING_DIR)
-  : join(here, '..', '..');
+  : join(here, '..', '..', 'public');
 const check = process.argv.includes('--check');
 
 // Directories under the pages dir that never hold pages.

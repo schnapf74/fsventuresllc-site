@@ -2,14 +2,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, cpSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const script = join(here, 'sync-partials.mjs');
-const realPages = join(here, '..', '..');
+const realPages = join(here, '..', '..', 'public');
 const footer = readFileSync(join(here, 'footer.html'), 'utf8').trimEnd();
 
 function run(dir, ...args) {
@@ -94,4 +94,12 @@ test('--check fails for a sitemap URL with no page on disk', () => {
   const r = run(dir, '--check');
   assert.equal(r.status, 1);
   assert.match(r.stderr, /blog\/missing\/index\.html: listed in sitemap\.xml but not found/);
+});
+
+test('the publish directory holds only site files (cs-publish-scope)', () => {
+  const published = readdirSync(realPages);
+  for (const name of ['scripts', '.github', 'README.md', 'package.json', '.git']) {
+    assert.ok(!published.includes(name), `${name} must not be under public/`);
+  }
+  assert.ok(published.includes('index.html'));
 });
